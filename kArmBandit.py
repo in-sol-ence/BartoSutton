@@ -10,6 +10,7 @@ class kbandit:
         self.rewmean = rng.uniform(low=-20, high=10, size=actions)
         self.stdv = standard_deviation
         self.act = actions
+        self.rewmean = 0
 
     def kbandit(self, action):
         if action>=0 and action<self.act:
@@ -20,13 +21,22 @@ class kbandit:
 
         if (not self.stat) and rng.random()>0.5:
             self.rewmean[rng.integers(low=0, high=(self.act-1))]+=(rng.normal(loc=0, scale=0.2)) #Edit scale (stdev) to change how fast the values change
-        
+        self.rewcum
         return reward
+    
     def cheat(self):
         return self.rewmean
     
     def optimal(self):
         return self.rewmean.argmax()
+    
+    def graph(self, Q, rewcum, ):
+        print("Action Q vals : ")
+        print(Q)
+        print("True values :")
+        print(self.cheat())
+        print(f'Cumulative reward = {rewcum}')
+
     
 actions = 10
 ep = 0.1
