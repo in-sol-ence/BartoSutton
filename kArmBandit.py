@@ -29,7 +29,12 @@ class kbandit:
         if len(self.opt) == 0: # For the first time step the 'value at the time step before' is 0.
             prevopt = 0
         else:
-            prevopt = self.opt[len(opt)-1]
+            try:
+                prevopt = self.opt[len(opt)-1]
+            except IndexError:
+                print(opt)
+        
+        
         if a == bandit.optimal():
             self.opt.append((prevopt*(self.step-1) + 100)/self.step)
         else:
@@ -49,6 +54,8 @@ class kbandit:
         return self.rewmean.argmax()
     
     def graph(self, Q):
+        (np.arange(0, step)) 
+
         print("Action Q vals : ")
         print(Q)
         print("True values :")
@@ -133,26 +140,5 @@ else:
                 opt.append((i*(step-1) + 100)/step)
             else:
                 opt.append(i*(step-1)/step)
-    
 
-print("Action Q vals : ")
-print(Q)
-print("True values :")
-print(bandit.cheat())
-print(f'Cumulative reward = {rewcum}')
-
-print(steps)
-
-plt.plot(steps, rewards, marker='o')  # 'o' adds a dot at each step
-plt.xlabel('Step')
-plt.ylabel('Reward')
-plt.title('Step-rewards Plot')
-plt.grid(True)
-plt.show()
-
-plt.plot(steps, opt, marker='o')  # 'o' adds a dot at each step
-plt.xlabel('Step')
-plt.ylabel('Optimal Action %')
-plt.title('Optimal Action Plot')
-plt.grid(True)
-plt.show()
+bandit.graph(Q)
