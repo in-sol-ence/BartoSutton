@@ -21,18 +21,15 @@ class kbandit:
             print("Invalid Action") 
             print(f'Action: {action}')
 
-        if (not self.stat) and rng.random()>0.5:
-            self.rewmean[rng.integers(low=0, high=(self.act-1))]+=(rng.normal(loc=0, scale=0.2)) #Edit scale (stdev) to change how fast the values change
+        self.move()
+
         self.rewcum+=reward
         self.step+=1
 
         if len(self.opt) == 0: # For the first time step the 'value at the time step before' is 0.
             prevopt = 0
         else:
-            try:
-                prevopt = self.opt[len(self.opt)-1]
-            except IndexError:
-                print(opt)
+            prevopt = self.opt[len(self.opt)-1]
         
         
         if action == self.optimal():
@@ -47,6 +44,10 @@ class kbandit:
         self.rewavg.append(prevrewavg + ((1/self.step) * (reward - prevrewavg))) # This is another update rule you have seen before. Look at EpsilonGreedyWeighted
         return reward
     
+    def move(self):
+        if (not self.stat) and rng.random()>0.5:
+            self.rewmean[rng.integers(low=0, high=(self.act-1))]+=(rng.normal(loc=0, scale=0.2)) #Edit scale (stdev) to change how fast the values change
+
     def cheat(self):
         return self.rewmean
     
@@ -75,3 +76,4 @@ class kbandit:
         plt.title('Optimal Action Plot')
         plt.grid(True)
         plt.show() 
+

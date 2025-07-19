@@ -15,7 +15,7 @@ print(f'Starting stepsize weight average method with ep = {ep}')
 
 bandit = kbandit(stationary, actions)
 
-for step in range(10000):
+for _ in range(10000):
     if rng.random() > ep:
         a = Q.argmax()
     else:
