@@ -29,6 +29,6 @@ for steps in range(10000):
     if const == True:
         Q[action] = Q[action] + (reward - Q[action])*alpha
     else:
-        Q[action] = Q[action] + (reward - Q[action])* (1/N[action])
+        Q[action] = Q[action] + (reward - Q[action])* (1/(N[action]))
 
 bandit.graph(Q)

@@ -31,7 +31,6 @@ class kbandit:
         else:
             prevopt = self.opt[len(self.opt)-1]
         
-        
         if action == self.optimal():
             self.opt.append((prevopt*(self.step-1) + 100)/self.step)
         else:
@@ -77,3 +76,6 @@ class kbandit:
         plt.grid(True)
         plt.show() 
 
+class kbanditPar(kbandit):
+    def compare(algo1 algo2):
+        
