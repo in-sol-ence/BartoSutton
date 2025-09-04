@@ -58,4 +58,5 @@ class JackCarRental:
 
     def get_state(self):
         return (self.location1_cars, self.location2_cars, self.cash)
+        
     
