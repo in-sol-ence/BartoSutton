@@ -1,5 +1,5 @@
 from jackCarRental import JackCarRental
-
+import time as time
 def init() -> dict:
     env = JackCarRental(10, 10, 1)
     print(env.get_state())
@@ -24,9 +24,9 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
     
     It returns the new state-value pairs"""
     # Policy Evaluation
-    delta = 0.0
+    delta = theta+1
     policy_eval = 0
-    while (delta < theta):
+    while (delta > theta):
         delta = 0.0
         for cars1 in range(22):
             for cars2 in range(22):
@@ -40,9 +40,11 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
         print(f"Policy evaluation {policy_eval} completed with delta: {delta}.")
     return value
 
-def policyImprov(gamma, value, policy, env) -> None:
+def policyImprov(gamma, value, policy, env) -> dict:
     """Given accurate (to theta) state-value pairs and certain environment dynamics,
-    policyImprov finds the best policy pi."""
+    policyImprov finds the best policy pi.
+    
+    It returns a new policy and a boolean indicating the old policy's stability."""
     policy_stable = True
     for cars1 in range(22):
         for cars2 in range(22):
@@ -56,23 +58,27 @@ def policyImprov(gamma, value, policy, env) -> None:
                     argMax = arg
                     best_action = action
                     policy_stable=False
+            policy[(cars1, cars1)] = best_action
+
+    time.sleep(3)
                 
     if policy_stable:
         print("Found optimal policy")
+        return policy, policy_stable 
     else:
         print("Going back in")
+        return policy, policy_stable
 
 def main():
     theta = 0.1  # Learning rate
     gamma = 0.9  # Discount factor
     var = init()
-    var["value"] = policyEval(gamma, theta, **var) # updating the state-values
-    var["policy"] = policyEval(gamma, **var) # updating the policy
-
-
-
-
+    policy_stable = False
+    while not policy_stable:
+        var["value"] = policyEval(gamma, theta, **var) # updating the state-values
+        var["policy"], policy_stable = policyImprov(gamma, **var) # updating the policy
     
+    print(var["policy"])
 
 if __name__ == "__main__":
     main()
