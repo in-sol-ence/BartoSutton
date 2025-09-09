@@ -1,5 +1,8 @@
 from jackCarRental import JackCarRental
 import time as time
+import numpy as np
+import matplotlib.pyplot as plt
+
 def init() -> dict:
     env = JackCarRental(10, 10, 1)
     print(env.get_state())
@@ -59,8 +62,6 @@ def policyImprov(gamma, value, policy, env) -> dict:
                     best_action = action
                     policy_stable=False
             policy[(cars1, cars1)] = best_action
-
-    time.sleep(3)
                 
     if policy_stable:
         print("Found optimal policy")
@@ -68,6 +69,37 @@ def policyImprov(gamma, value, policy, env) -> dict:
     else:
         print("Going back in")
         return policy, policy_stable
+
+def graphHelper(value: dict):
+    board = np.zeros((22, 22), dtype=float)
+
+    for car1 in range(22):
+        for car2 in range(22):
+            board[car1, car2] = round(value[(car1, car2)])
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    im = ax.imshow(board, origin="lower", interpolation="none", aspect="equal")
+
+    # Tick marks at each cell
+    ax.set_xticks(range(22))
+    ax.set_yticks(range(22))
+    ax.set_xlabel("cars1 (x)")
+    ax.set_ylabel("cars2 (y)")
+
+    # Cell values
+    for y in range(22):
+        for x in range(22):
+            ax.text(x, y, f"{board[y, x]:g}", ha="center", va="center", fontsize=7)
+
+    # Grid lines on cell boundaries
+    ax.set_xticks(np.arange(-.5, 22, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, 22, 1), minor=True)
+    ax.grid(which="minor", linewidth=0.5)
+    ax.tick_params(which="minor", length=0)
+    plt.colorbar(im, label="value")
+    plt.tight_layout()
+    plt.show()
+    time.sleep(1)
 
 def main():
     theta = 0.1  # Learning rate
@@ -77,8 +109,9 @@ def main():
     while not policy_stable:
         var["value"] = policyEval(gamma, theta, **var) # updating the state-values
         var["policy"], policy_stable = policyImprov(gamma, **var) # updating the policy
-    
+        graphHelper(var["value"])
     print(var["policy"])
+
 
 if __name__ == "__main__":
     main()
