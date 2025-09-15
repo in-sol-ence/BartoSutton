@@ -35,8 +35,8 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
             for cars2 in range(22):
                 v = value[(cars1, cars2)]
                 action = policy[(cars1, cars2)]
-                expectedRew = min(env.poisson_lambda_rent1, cars1) + min(env.poisson_lambda_rent2, cars2)
-                nextState = (max(0, cars1-action-env.poisson_lambda_rent1), max(0, cars2+action-env.poisson_lambda_rent2))
+                expectedRew = (min(env.poisson_lambda_rent1, cars1) + min(env.poisson_lambda_rent2, cars2))*10 - (abs(action) * 5)
+                nextState = (min(max(0, cars1-action-env.poisson_lambda_rent1), 21), min(max(0, cars2+action-env.poisson_lambda_rent2), 21))
                 value[(cars1, cars2)] = expectedRew + gamma*value[nextState]
                 delta = max(delta, abs(v-value[(cars1, cars2)]))
         policy_eval += 1
@@ -52,16 +52,19 @@ def policyImprov(gamma, value, policy, env) -> dict:
     for cars1 in range(22):
         for cars2 in range(22):
             best_action = policy[(cars1, cars2)]
+            orig_action = best_action
             argMax = value[(cars1, cars2)]
             for action in range(-5, 6):
-                expectedRew = min(env.poisson_lambda_rent1, cars1) + min(env.poisson_lambda_rent2, cars2)
+                expectedRew = (min(env.poisson_lambda_rent1, cars1) + min(env.poisson_lambda_rent2, cars2))*10 - (abs(action)*5)
                 nextState = (min(max(0, cars1-action-env.poisson_lambda_rent1), 21), min(max(0, cars2+action-env.poisson_lambda_rent2), 21))
                 arg = expectedRew + gamma*value[nextState]
                 if arg > argMax:
+                    print(f'State: {cars1}, {cars2}. Action: {action} Arg: {arg}. argMax: {argMax}')
                     argMax = arg
                     best_action = action
-                    policy_stable=False
-            policy[(cars1, cars1)] = best_action
+            if orig_action != best_action:
+                policy_stable = False
+                policy[(cars1, cars2)] = best_action
                 
     if policy_stable:
         print("Found optimal policy")

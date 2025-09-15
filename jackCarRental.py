@@ -6,6 +6,8 @@ class JackCarRental:
         self.poisson_lambda_rent2 = 4
         self.poisson_lambda_return1 = 3
         self.poisson_lambda_return2 = 2
+        self.rentRevenue = 10
+        self.moveCost = -5
         self.max_cars = 20
         self.max_move = 5
         self.move_cost = 2
