@@ -1,10 +1,9 @@
-from jackCarRental import JackCarRental
 import time as time
-import numpy as np
 import matplotlib.pyplot as plt
+from types import SimpleNamespace
+import math
 
 def init() -> dict:
-    env = JackCarRental(10, 10, 1)
     print(env.get_state())
     ## Initialize policy and value function
     # Considering it is a deterministic environment, we can use a dictionary to store the policy and value function
@@ -14,7 +13,24 @@ def init() -> dict:
         for cars2 in range(22):
             policy[(cars1, cars2)] = 0  # Initial policy: no cars moved
             value[(cars1, cars2)] = 0.0
+    
+    env = SimpleNamespace()
 
+    env.poisson_lambda_rent1 = 3
+    env.poisson_lambda_rent2 = 4
+    env.poisson_lambda_return1 = 3
+    env.poisson_lambda_return2 = 2
+    env.rentRevenue = 10
+    env.moveCost = -5
+    env.max_cars = 20
+    env.max_move = 5
+    env.move_cost = 2
+    
+    def poissonCalc(lambda_, k): 
+        return (lambda_**k * math.exp(-lambda_))/math.factorial(k)
+    
+    env.poisson = poissonCalc
+    
     return {
         "value": value,
         "policy": policy,
@@ -33,13 +49,14 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
         delta = 0.0
         for cars1 in range(22):
             for cars2 in range(22):
-                v = value[(cars1, cars2)]
-                action = policy[(cars1, cars2)]
-                expectedRew = (min(env.poisson_lambda_rent1, cars1) + min(env.poisson_lambda_rent2, cars2))*10 - (abs(action) * 5)
-                nextState = (min(max(0, cars1-action-env.poisson_lambda_rent1), 21), min(max(0, cars2+action-env.poisson_lambda_rent2), 21))
-                value[(cars1, cars2)] = expectedRew + gamma*value[nextState]
-                delta = max(delta, abs(v-value[(cars1, cars2)]))
-        policy_eval += 1
+                old = value[(cars1, cars2)]
+                new = 0
+                for m1 in range(0, cars1):
+                    for m2 in range(0, cars2):
+                        for r1 in range(0, cars1):
+                            for r2 in range(0, cars2):
+                                new += env.poisson()
+
         print(f"Policy evaluation {policy_eval} completed with delta: {delta}.")
     return value
 
