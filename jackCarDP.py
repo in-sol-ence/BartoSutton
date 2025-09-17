@@ -16,15 +16,14 @@ def init() -> dict:
     
     env = SimpleNamespace()
     
-    env.r1 = 3
-    env.r2 = 4
-    env.m1 = 3
+    env.r1 = 3 # lambda values for the poisson variable for rentals taken
+    env.r2 = 4 
+    env.m1 = 3 # lambda values for the poisson variable for rental returns
     env.m2 = 2
     env.rentRevenue = 10
     env.moveCost = -5
     env.max_cars = 20
     env.max_move = 5
-    env.move_cost = 2
     
     def poissonCalc(lambda_, k): 
         return (lambda_**k * math.exp(-lambda_))/math.factorial(k)
@@ -52,15 +51,17 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
                 old = value[(cars1, cars2)]
                 new = 0
                 action = policy[(cars1, cars2)]
-                for m1 in range(0, cars1):
-                    for m2 in range(0, cars2):
-                        for r1 in range(0, cars1):
-                            for r2 in range(0, cars2):
+                for m1 in range(0, 10):
+                    for m2 in range(0, 10):
+                        for r1 in range(0, 10):
+                            for r2 in range(0, 10):
                                 c1 = min(max(cars1-action, 0), 21) # This is the cars after the action
-                                c2 = min(max(cars2+action, 0), 21 )
-                                nextState = (min(max(c1-r1+m1, 0), 21), min(max(c2-r2+m2, 0), 21)) # This is the next state. 
+                                c2 = min(max(cars2+action, 0), 21)
+                                d1 = max(c1-r1, 0)
+                                d2 = max(c2-r2, 0)
+                                nextState = (min(d1+m1, 21), min(d2+m2, 21)) # This is the next state. 
                                 stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
-                                new += (stateTransitonProb)* ((c1+c2)*env.rentRevenue + gamma*value[nextState])
+                                new += (stateTransitonProb)*((min(c1, r1)+min(c2, r2))*env.rentRevenue + gamma*value[nextState])
                 new += action*env.moveCost
                 value[(cars1, cars2)] = new
                 delta = max(delta, abs(old-new)) # Recording the max difference in new and old state values. Eventually this should converge to 0 and the state values for the policy pi should conveerge to their values but to save compute we set a tolerance theta.
@@ -71,7 +72,6 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
 def policyImprov(gamma, value, policy, env) -> dict:
     """Given accurate (to theta) state-value pairs and certain environment dynamics,
     policyImprov finds the best policy pi.
-    
     It returns a new policy and a boolean indicating the old policy's stability."""
     policy_stable = True
     for cars1 in range(22):
@@ -79,18 +79,20 @@ def policyImprov(gamma, value, policy, env) -> dict:
             best_action = policy[(cars1, cars2)]
             orig_action = best_action
             argMax = value[(cars1, cars2)]
-            actionVal=0
             for action in range(-5, 6):
-                for m1 in range(0, cars1):
-                    for m2 in range(0, cars2):
-                        for r1 in range(0, cars1):
-                            for r2 in range(0, cars2):
+                actionVal=0
+                for m1 in range(0, 10):
+                    for m2 in range(0, 10):
+                        for r1 in range(0, 10):
+                            for r2 in range(0, 10):
                                 stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
                                 c1 = min(max(cars1-action, 0), 21) # This is the cars after the action
                                 c2 = min(max(cars2+action, 0), 21 )
-                                nextState = (min(max(c1-r1+m1, 0), 21), min(max(c2-r2+m2, 0), 21)) # This is the next state. 
+                                d1 = max(c1-r1, 0)
+                                d2 = max(c2-r2, 0)
+                                nextState = (min(d1+m1, 21), min(d2+m2, 21)) # This is the next state. 
                                 stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
-                                actionVal += (stateTransitonProb)* ((c1+c2)*env.rentRevenue + gamma*value[nextState])
+                                actionVal += (stateTransitonProb)* ((min(c1, r1)+ min(c2, r2))*env.rentRevenue + gamma*value[nextState])
                 actionVal += action*env.moveCost
                 if argMax < actionVal:
                     best_action = action
@@ -153,6 +155,7 @@ def main():
         var["policy"], policy_stable = policyImprov(gamma, **var) # updating the policy
         graphHelper(var["value"], f'Values: {iter}')
         graphHelper(var["policy"], f'Policy: {iter}')
+        iter+=1
     print(var["policy"])
 
 
