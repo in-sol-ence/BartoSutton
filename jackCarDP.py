@@ -140,7 +140,6 @@ def graphHelper(value: dict, figName: str):
     plt.tight_layout()
     plt.savefig(figName)
     print(f'Saved graph at {figName}')
-    plt.show()
 
     time.sleep(1)
 
@@ -149,14 +148,16 @@ def main():
     gamma = 0.9  # Discount factor
     var = init()
     policy_stable = False
-    iter = 1
+    iter = 0
     while not policy_stable:
+        graphHelper(var["value"], f'Values.{iter}')
+        graphHelper(var["policy"], f'Policy.{iter}')
         var["value"] = policyEval(gamma, theta, **var) # updating the state-values
         var["policy"], policy_stable = policyImprov(gamma, **var) # updating the policy
-        graphHelper(var["value"], f'Values: {iter}')
-        graphHelper(var["policy"], f'Policy: {iter}')
+        
         iter+=1
     print(var["policy"])
+    graphHelper(var["policy"], f'OptimalPolicy')
 
 
 if __name__ == "__main__":
