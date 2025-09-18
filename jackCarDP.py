@@ -59,7 +59,7 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
                                 c1 = min(max(cars1-action, 0), env.max_cars) # This is the cars after the action
                                 c2 = min(max(cars2+action, 0), env.max_cars)
                                 d1 = max(c1-r1, 0)
-                                d2 = max(c2-r2, 0)
+                                d2 = max(c2-r2, 0)   
                                 nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
                                 stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
                                 new += (stateTransitonProb)*((min(c1, r1)+min(c2, r2))*env.rentRevenue + gamma*value[nextState])
@@ -81,14 +81,18 @@ def policyImprov(gamma, value, policy, env) -> dict:
             orig_action = best_action
             argMax = value[(cars1, cars2)]
             for action in range(-5, 6):
+                if (action > 0 and cars1 < action) or (action < 0 and cars2 < abs(action)):
+                    continue # Invalid action
+                if (cars1 - action > env.max_cars) or (cars2 + action > env.max_cars):
+                    continue # Invalid action
                 actionVal=0
                 for m1 in range(0, env.max_poisson):
                     for m2 in range(0, env.max_poisson):
                         for r1 in range(0, env.max_poisson):
                             for r2 in range(0, env.max_poisson):
                                 stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
-                                c1 = min(max(cars1-action, 0), env.max_cars) # This is the cars after the action
-                                c2 = min(max(cars2+action, 0), env.max_cars)
+                                c1 = cars1-action # This is the cars after the action
+                                c2 = cars2+action
                                 d1 = max(c1-r1, 0)
                                 d2 = max(c2-r2, 0)
                                 nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
