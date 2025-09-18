@@ -9,10 +9,6 @@ def init() -> dict:
     # Considering it is a deterministic environment, we can use a dictionary to store the policy and value function
     policy = {}
     value = {}
-    for cars1 in range(22):
-        for cars2 in range(22):
-            policy[(cars1, cars2)] = 0  # Initial policy: no cars moved
-            value[(cars1, cars2)] = 0.0
     
     env = SimpleNamespace()
     
@@ -24,6 +20,11 @@ def init() -> dict:
     env.moveCost = -5
     env.max_cars = 20
     env.max_move = 5
+    env.max_poisson = 11 +1 # We will consider poisson values only up to 11 since the probability of getting a value more than 11 is negligible for our lambda values. +1 for range function.
+    for cars1 in range(env.max_cars + 1): # 0 to 20 cars
+        for cars2 in range(env.max_cars + 1):
+            policy[(cars1, cars2)] = 0  # Initial policy: no cars moved
+            value[(cars1, cars2)] = 0.0
     
     def poissonCalc(lambda_, k): 
         return (lambda_**k * math.exp(-lambda_))/math.factorial(k)
@@ -46,20 +47,20 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
     policy_eval = 0
     while (delta > theta):
         delta = 0.0
-        for cars1 in range(22):
-            for cars2 in range(22):
+        for cars1 in range(env.max_cars + 1):
+            for cars2 in range(env.max_cars + 1):
                 old = value[(cars1, cars2)]
                 new = 0
                 action = policy[(cars1, cars2)]
-                for m1 in range(0, 10):
-                    for m2 in range(0, 10):
-                        for r1 in range(0, 10):
-                            for r2 in range(0, 10):
-                                c1 = min(max(cars1-action, 0), 21) # This is the cars after the action
-                                c2 = min(max(cars2+action, 0), 21)
+                for m1 in range(0, env.max_poisson):
+                    for m2 in range(0, env.max_poisson):
+                        for r1 in range(0, env.max_poisson):
+                            for r2 in range(0, env.max_poisson):
+                                c1 = min(max(cars1-action, 0), env.max_cars) # This is the cars after the action
+                                c2 = min(max(cars2+action, 0), env.max_cars)
                                 d1 = max(c1-r1, 0)
                                 d2 = max(c2-r2, 0)
-                                nextState = (min(d1+m1, 21), min(d2+m2, 21)) # This is the next state. 
+                                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
                                 stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
                                 new += (stateTransitonProb)*((min(c1, r1)+min(c2, r2))*env.rentRevenue + gamma*value[nextState])
                 new += action*env.moveCost
@@ -74,23 +75,23 @@ def policyImprov(gamma, value, policy, env) -> dict:
     policyImprov finds the best policy pi.
     It returns a new policy and a boolean indicating the old policy's stability."""
     policy_stable = True
-    for cars1 in range(22):
-        for cars2 in range(22):
+    for cars1 in range(env.max_cars + 1):
+        for cars2 in range(env.max_cars + 1):
             best_action = policy[(cars1, cars2)]
             orig_action = best_action
             argMax = value[(cars1, cars2)]
             for action in range(-5, 6):
                 actionVal=0
-                for m1 in range(0, 10):
-                    for m2 in range(0, 10):
-                        for r1 in range(0, 10):
-                            for r2 in range(0, 10):
+                for m1 in range(0, env.max_poisson):
+                    for m2 in range(0, env.max_poisson):
+                        for r1 in range(0, env.max_poisson):
+                            for r2 in range(0, env.max_poisson):
                                 stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
-                                c1 = min(max(cars1-action, 0), 21) # This is the cars after the action
-                                c2 = min(max(cars2+action, 0), 21 )
+                                c1 = min(max(cars1-action, 0), env.max_cars) # This is the cars after the action
+                                c2 = min(max(cars2+action, 0), env.max_cars)
                                 d1 = max(c1-r1, 0)
                                 d2 = max(c2-r2, 0)
-                                nextState = (min(d1+m1, 21), min(d2+m2, 21)) # This is the next state. 
+                                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
                                 stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
                                 actionVal += (stateTransitonProb)* ((min(c1, r1)+ min(c2, r2))*env.rentRevenue + gamma*value[nextState])
                 actionVal += action*env.moveCost
