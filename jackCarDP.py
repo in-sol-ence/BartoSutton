@@ -16,6 +16,7 @@ def init() -> dict:
     env.r2 = 4 
     env.m1 = 3 # lambda values for the poisson variable for rental returns
     env.m2 = 2
+    lamdas = [env.r1, env.r2, env.m1, env.m2]
     env.rentRevenue = 10
     env.moveCost = -5
     env.max_cars = 20
@@ -26,10 +27,17 @@ def init() -> dict:
             policy[(cars1, cars2)] = 0  # Initial policy: no cars moved
             value[(cars1, cars2)] = 0.0
     
-    def poissonCalc(lambda_, k): 
-        return (lambda_**k * math.exp(-lambda_))/math.factorial(k)
+    def poi(lamda, n):
+        """Calculates poisson probability of n given lambda"""
+        return (lamda**n)*(math.exp(-lamda))/math.factorial(n)
     
-    env.poisson = poissonCalc
+    env.poiMap = dict()
+    for l in lamdas:
+        env.poiMap[(l, 0)] = poi(l, 0)
+        for k in range(1, env.max_poisson):
+            env.poiMap[(l, k)] = env.poiMap[(l, k-1)]*l/k # Using the property that P(X=n) = (lambda/n)*P(X=n-1)
+    
+    print("Initialized environment with poisson map")
     
     return {
         "value": value,
@@ -46,7 +54,7 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
     delta = theta+1
     policy_eval = 0
     while (delta > theta):
-        delta = 0.0
+        delta = 0.0   
         for cars1 in range(env.max_cars + 1):
             for cars2 in range(env.max_cars + 1):
                 old = value[(cars1, cars2)]
@@ -61,7 +69,7 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
                                 d1 = max(c1-r1, 0)
                                 d2 = max(c2-r2, 0)   
                                 nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
-                                stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
+                                stateTransitonProb = env.poiMap[(env.r1, r1)]*env.poiMap[(env.r2, r2)]*env.poiMap[(env.m1, m1)]*env.poiMap[(env.m2, m2)]
                                 new += (stateTransitonProb)*((min(c1, r1)+min(c2, r2))*env.rentRevenue + gamma*value[nextState])
                 new += action*env.moveCost
                 value[(cars1, cars2)] = new
@@ -90,13 +98,12 @@ def policyImprov(gamma, value, policy, env) -> dict:
                     for m2 in range(0, env.max_poisson):
                         for r1 in range(0, env.max_poisson):
                             for r2 in range(0, env.max_poisson):
-                                stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
                                 c1 = cars1-action # This is the cars after the action
                                 c2 = cars2+action
                                 d1 = max(c1-r1, 0)
                                 d2 = max(c2-r2, 0)
                                 nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
-                                stateTransitonProb = env.poisson(env.r1, r1)*env.poisson(env.r2, r2)*env.poisson(env.m1, m1)*env.poisson(env.m2, m2)
+                                stateTransitonProb = env.poiMap[(env.r1, r1)]*env.poiMap[(env.r2, r2)]*env.poiMap[(env.m1, m1)]*env.poiMap[(env.m2, m2)]
                                 actionVal += (stateTransitonProb)* ((min(c1, r1)+ min(c2, r2))*env.rentRevenue + gamma*value[nextState])
                 actionVal += action*env.moveCost
                 if argMax < actionVal:
@@ -115,30 +122,30 @@ def policyImprov(gamma, value, policy, env) -> dict:
         print("Going back in")
         return policy, policy_stable
 
-def graphHelper(value: dict, figName: str):
-    board = np.zeros((22, 22), dtype=float)
+def graphHelper(value: dict, figName: str, env=SimpleNamespace(max_cars=20)):
+    board = np.zeros((env.max_cars+1, env.max_cars+1), dtype=float)
 
-    for car1 in range(22):
-        for car2 in range(22):
+    for car1 in range(env.max_cars + 1):
+        for car2 in range(env.max_cars + 1):
             board[car1, car2] = round(value[(car1, car2)])
 
     fig, ax = plt.subplots(figsize=(7, 7))
     im = ax.imshow(board, origin="lower", interpolation="none", aspect="equal")
 
     # Tick marks at each cell
-    ax.set_xticks(range(22))
-    ax.set_yticks(range(22))
+    ax.set_xticks(range(env.max_cars+1))
+    ax.set_yticks(range(env.max_cars+1))
     ax.set_xlabel("cars1 (x)")
     ax.set_ylabel("cars2 (y)")
 
     # Cell values
-    for y in range(22):
-        for x in range(22):
+    for y in range(env.max_cars+1):
+        for x in range(env.max_cars+1):
             ax.text(x, y, f"{board[y, x]:g}", ha="center", va="center", fontsize=7)
 
     # Grid lines on cell boundaries
-    ax.set_xticks(np.arange(-.5, 22, 1), minor=True)
-    ax.set_yticks(np.arange(-.5, 22, 1), minor=True)
+    ax.set_xticks(np.arange(-.5, env.max_cars+1, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, env.max_cars+1, 1), minor=True)
     ax.grid(which="minor", linewidth=0.5)
     ax.tick_params(which="minor", length=0)
     plt.colorbar(im, label="value")
@@ -155,8 +162,8 @@ def main():
     policy_stable = False
     iter = 0
     while not policy_stable:
-        graphHelper(var["value"], f'Values.{iter}')
-        graphHelper(var["policy"], f'Policy.{iter}')
+        graphHelper(var["value"], f'Values_{iter}')
+        graphHelper(var["policy"], f'Policy_{iter}')
         var["value"] = policyEval(gamma, theta, **var) # updating the state-values
         var["policy"], policy_stable = policyImprov(gamma, **var) # updating the policy
         
