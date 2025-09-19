@@ -21,7 +21,7 @@ def init() -> dict:
     env.moveCost = -5
     env.max_cars = 20
     env.max_move = 5
-    env.max_poisson = 11 +1 # We will consider poisson values only up to 11 since the probability of getting a value more than 11 is negligible for our lambda values. +1 for range function.
+    env.max_poisson = 20 +1 # We will consider poisson values only up to 11 since the probability of getting a value more than 11 is negligible for our lambda values. +1 for range function.
     for cars1 in range(env.max_cars + 1): # 0 to 20 cars
         for cars2 in range(env.max_cars + 1):
             policy[(cars1, cars2)] = 0  # Initial policy: no cars moved
@@ -156,7 +156,7 @@ def graphHelper(value: dict, figName: str, env=SimpleNamespace(max_cars=20)):
     time.sleep(1)
 
 def main():
-    theta = 0.1  # Learning rate
+    theta = 1  # Learning rate
     gamma = 0.9  # Discount factor
     var = init()
     policy_stable = False
