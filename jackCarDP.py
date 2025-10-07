@@ -60,15 +60,19 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
                 old = value[(cars1, cars2)]
                 new = 0
                 action = policy[(cars1, cars2)]
+                if cars1-action < 0:
+                    action = cars1
+                elif action+cars2 < 0:
+                    action = -(cars2)
+                c1 = min(cars1-action, env.max_cars) # This is the cars after the action
+                c2 = min(cars2+action, env.max_cars)
+                d1 = max(c1-r1, 0)
+                d2 = max(c2-r2, 0)
+                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
                 for m1 in range(0, env.max_poisson):
                     for m2 in range(0, env.max_poisson):
                         for r1 in range(0, env.max_poisson):
-                            for r2 in range(0, env.max_poisson):
-                                c1 = min(max(cars1-action, 0), env.max_cars) # This is the cars after the action
-                                c2 = min(max(cars2+action, 0), env.max_cars)
-                                d1 = max(c1-r1, 0)
-                                d2 = max(c2-r2, 0)   
-                                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
+                            for r2 in range(0, env.max_poisson):   
                                 stateTransitonProb = env.poiMap[(env.r1, r1)]*env.poiMap[(env.r2, r2)]*env.poiMap[(env.m1, m1)]*env.poiMap[(env.m2, m2)]
                                 new += (stateTransitonProb)*((min(c1, r1)+min(c2, r2))*env.rentRevenue + gamma*value[nextState])
                 new += action*env.moveCost
@@ -94,15 +98,15 @@ def policyImprov(gamma, value, policy, env) -> dict:
                 if (cars1 - action > env.max_cars) or (cars2 + action > env.max_cars):
                     continue # Invalid action
                 actionVal=0
+                c1 = cars1-action # This is the cars after the action
+                c2 = cars2+action
+                d1 = max(c1-r1, 0)
+                d2 = max(c2-r2, 0)
+                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
                 for m1 in range(0, env.max_poisson):
                     for m2 in range(0, env.max_poisson):
                         for r1 in range(0, env.max_poisson):
                             for r2 in range(0, env.max_poisson):
-                                c1 = cars1-action # This is the cars after the action
-                                c2 = cars2+action
-                                d1 = max(c1-r1, 0)
-                                d2 = max(c2-r2, 0)
-                                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
                                 stateTransitonProb = env.poiMap[(env.r1, r1)]*env.poiMap[(env.r2, r2)]*env.poiMap[(env.m1, m1)]*env.poiMap[(env.m2, m2)]
                                 actionVal += (stateTransitonProb)* ((min(c1, r1)+ min(c2, r2))*env.rentRevenue + gamma*value[nextState])
                 actionVal += action*env.moveCost
@@ -162,14 +166,14 @@ def main():
     policy_stable = False
     iter = 0
     while not policy_stable:
-        graphHelper(var["value"], f'Values_{iter}')
-        graphHelper(var["policy"], f'Policy_{iter}')
+        graphHelper(var["value"], f'Values_{iter}_new')
+        graphHelper(var["policy"], f'Policy_{iter}_new')
         var["value"] = policyEval(gamma, theta, **var) # updating the state-values
         var["policy"], policy_stable = policyImprov(gamma, **var) # updating the policy
         
         iter+=1
     print(var["policy"])
-    graphHelper(var["policy"], f'OptimalPolicy')
+    graphHelper(var["policy"], f'OptimalPolicy_new')
 
 
 if __name__ == "__main__":
