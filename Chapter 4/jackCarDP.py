@@ -21,7 +21,7 @@ def init() -> dict:
     env.moveCost = -5
     env.max_cars = 20
     env.max_move = 5
-    env.max_poisson = 20 +1 # We will consider poisson values only up to # since the probability of getting a value more than 11 is negligible for our lambda values. +1 for range function.
+    env.max_poisson = 20 +1 # We will consider poisson values only up to 11 since the probability of getting a value more than 11 is negligible for our lambda values. +1 for range function.
     for cars1 in range(env.max_cars + 1): # 0 to 20 cars
         for cars2 in range(env.max_cars + 1):
             policy[(cars1, cars2)] = 0  # Initial policy: no cars moved
@@ -60,27 +60,22 @@ def policyEval(gamma, theta, value, policy, env) -> dict:
                 old = value[(cars1, cars2)]
                 new = 0
                 action = policy[(cars1, cars2)]
+                if cars1-action < 0:
+                    action = cars1
+                elif action+cars2 < 0:
+                    action = -(cars2)
+                c1 = min(cars1-action, env.max_cars) # This is the cars after the action
+                c2 = min(cars2+action, env.max_cars)
                 for m1 in range(0, env.max_poisson):
                     for m2 in range(0, env.max_poisson):
                         for r1 in range(0, env.max_poisson):
+                            d1 = max(c1-r1, 0)
                             for r2 in range(0, env.max_poisson):
-                                if cars1-action < 0:
-                                    action = cars1
-                                elif action+cars2 < 0:
-                                    action = -(cars2)
-                                
-                                c1 = cars1-action # This is the cars after the action
-                                c2 = cars2+action
-                                
-                                d1 = max(c1-r1, 0)
-                                d2 = max(c2-r2, 0)   
-                                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
+                                d2 = max(c2-r2, 0)
+                                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state.    
                                 stateTransitonProb = env.poiMap[(env.r1, r1)]*env.poiMap[(env.r2, r2)]*env.poiMap[(env.m1, m1)]*env.poiMap[(env.m2, m2)]
                                 new += (stateTransitonProb)*((min(c1, r1)+min(c2, r2))*env.rentRevenue + gamma*value[nextState])
-                if action<0: 
-                    new += (action-1)*env.moveCost
-                else:
-                    new += action*env.moveCost
+                new += action*env.moveCost
                 value[(cars1, cars2)] = new
                 delta = max(delta, abs(old-new)) # Recording the max difference in new and old state values. Eventually this should converge to 0 and the state values for the policy pi should conveerge to their values but to save compute we set a tolerance theta.
         policy_eval+=1
@@ -103,22 +98,18 @@ def policyImprov(gamma, value, policy, env) -> dict:
                 if (cars1 - action > env.max_cars) or (cars2 + action > env.max_cars):
                     continue # Invalid action
                 actionVal=0
+                c1 = cars1-action # This is the cars after the action
+                c2 = cars2+action
+                d1 = max(c1-r1, 0)
+                d2 = max(c2-r2, 0)
+                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
                 for m1 in range(0, env.max_poisson):
                     for m2 in range(0, env.max_poisson):
                         for r1 in range(0, env.max_poisson):
                             for r2 in range(0, env.max_poisson):
-                                c1 = cars1-action # This is the cars after the action
-                                c2 = cars2+action
-                                d1 = max(c1-r1, 0)
-                                d2 = max(c2-r2, 0)
-                                nextState = (min(d1+m1, env.max_cars), min(d2+m2, env.max_cars)) # This is the next state. 
                                 stateTransitonProb = env.poiMap[(env.r1, r1)]*env.poiMap[(env.r2, r2)]*env.poiMap[(env.m1, m1)]*env.poiMap[(env.m2, m2)]
                                 actionVal += (stateTransitonProb)* ((min(c1, r1)+ min(c2, r2))*env.rentRevenue + gamma*value[nextState])
-
-                if action<0: 
-                    actionVal += (action-1)*env.moveCost
-                else:
-                    actionV += action*env.moveCost
+                actionVal += action*env.moveCost
                 if argMax < actionVal:
                     best_action = action
                     argMax = actionVal    
