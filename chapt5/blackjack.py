@@ -5,7 +5,10 @@ class state:
     def __init__(self):
         self.playerCards = [self.getCard(), self.getCard()]
         self.dealerCards = [self.getCard(), self.getCard()]
-        self.viewableDealerCard = self.dealerCards[0]
+        if self.dealerCards[0] == 11:
+            self.viewableDealerCard = 11
+        else: 
+            self.viewableDealerCard = self.dealerCards[0]
         self._terminal = False
 
     def getCard(self) -> int:
@@ -50,15 +53,18 @@ class state:
 
     @property
     def terminal(self) -> bool:
-        if self.playerSum > 21:
+        if self.playerSum >= 21 or self.dealerSum >= 21 or self._terminal:
+            self._terminal = True
             return True
-        if self.dealerSum >= 17:
-            return True
-        return False
+        else:
+            return False
 
     @terminal.setter
     def terminal(self, value: bool):
         self._terminal = value
+    
+    def getStateTuple(self) -> tuple:
+        return (self.isPlayerUsuableAce, self.playerSum, self.viewableDealerCard)
 
 class blackJack:
     def __init__(self) -> state:
@@ -71,7 +77,7 @@ class blackJack:
             return self._state
         else:
             raise Exception("Game is already over.")
-
+    
     def stick(self) -> state:
         if not self._state.terminal:
             while self._state.dealerSum < 17:
@@ -81,6 +87,16 @@ class blackJack:
         else:
             raise Exception("Game is already over.")
     
+    # Helper function so that I can js plug in values from a policy function. ik its convoluted but lets just run with it
+    def action(self, act: int) -> state:
+        """0 for stick, 1 for hit"""
+        if act == 0:
+            return self.stick()
+        elif act == 1:
+            return self.hit()
+        else:
+            raise ValueError("Invalid action. Use 0 for stick and 1 for hit.")
+    
     @property
     def state(self) -> state:
         return self._state
@@ -88,14 +104,19 @@ class blackJack:
     @property
     def reward(self) -> int:
         """The reward is set with gamma = 1 and the only reward is at the terminal state."""
-        if self._state.playerSum > 21:
-            return -1
-        if self._state.dealerSum==21:
-            if self._state.playerSum==21:
-                return 0
-            return -1
-        if self._state.playerSum==21:
-            return 1
+        if self._state.terminal:
+            if self._state.playerSum > 21:
+                return -1
+            if self._state.dealerSum==21:
+                if self._state.playerSum==21:
+                    return 0
+                return -1
+            if self._state.dealerSum > 21:
+                return 1
+            if self._state.playerSum > self._state.dealerSum:
+                return 1
+            if self._state.playerSum < self._state.dealerSum:
+                return -1
         return 0
     
 if __name__ == "__main__":
