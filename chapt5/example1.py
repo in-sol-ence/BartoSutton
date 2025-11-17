@@ -1,4 +1,3 @@
-import numpy as np 
 import plotly.graph_objects as go
 from blackjack import blackJack
 from pathlib import Path
@@ -9,7 +8,7 @@ def policy(state) -> int:
 
 # --------------------------------------------------------
 ## Edit this value to change number of episodes simulated (too lazy to add a cmd line arg)
-numEpisodes = 100000
+numEpisodes = 2
 ## --------------------------------------------------------
 
 values = {}
@@ -29,7 +28,7 @@ for episode in range(numEpisodes):
         # For first visit MC we only add the state if we have not seen it before in this episode
         if state not in states:
             states.append(state)
-
+    print(states)
     for state in states:
         if visits.get(state) is None:
             visits[state] = 0
@@ -38,28 +37,27 @@ for episode in range(numEpisodes):
         # from 2.4 Incremental Implementation
         values[state] += (game.reward - values[state])/visits[state]
     
-    print(f'Episode {episode+1} complete')
+    # print(f'Episode {episode+1} complete')
 
-# Generating surface plots. (This is probably ineffecient but oh well.)
-x = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
-y = [1,2,3,4,5,6,7,8,9,10]
+# Generating surface plots. (Converting the dict to an array like this is probably ineffecient but oh well.)
 
 outputPath = Path('./plots')
 outputPath.mkdir(parents=True, exist_ok=True)
 
 for usable in [True, False]:
     graph = []
-    for p in x:
+    for p in range(1, 22):
         arr = []
-        for d in y:
+        for d in range(1, 11):
             key = (usable, p, d)
             if not values.get(key) is None:
                 arr.append(values.get(key))
             else:
                 arr.append(0)
         graph.append(arr)
-
-    fig = go.Figure(data=[go.Surface(z=graph, x=x, y=x)])
+    x = list(range(1, 11))
+    y = list(range(1, 22))
+    fig = go.Figure(data=[go.Surface(z=graph, x=x, y=y)])
     fig.update_layout(title=f'State Vals for {"usable ace" if usable else "no ace"} with {numEpisodes} episodes', autosize=True,
                       scene=dict(
                           xaxis_title='Dealer Showing',
@@ -69,4 +67,3 @@ for usable in [True, False]:
     name = f'blackjack_surface_{"ace" if usable else "no_ace"}_{numEpisodes}eps.html'
     fig.write_html(outputPath / name, include_plotlyjs='cdn')
     print(f'Wrote figure to {name}')
-    
