@@ -6,7 +6,7 @@ class state:
         self.playerCards = [self.getCard(), self.getCard()]
         self.dealerCards = [self.getCard(), self.getCard()]
         if self.dealerCards[0] == 11:
-            self.viewableDealerCard = 11
+            self.viewableDealerCard = 1
         else: 
             self.viewableDealerCard = self.dealerCards[0]
         self._terminal = False
@@ -17,7 +17,7 @@ class state:
         if card > 10:
             return 10
         elif card == 1:
-            return 11 
+            return 11
         else:
             return card
     
