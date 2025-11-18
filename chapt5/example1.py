@@ -8,7 +8,7 @@ def policy(state) -> int:
 
 # --------------------------------------------------------
 ## Edit this value to change number of episodes simulated (too lazy to add a cmd line arg)
-numEpisodes = 2
+numEpisodes = 1000000000
 ## --------------------------------------------------------
 
 values = {}
@@ -20,24 +20,27 @@ visits = {}
 # Simulating episodes
 for episode in range(numEpisodes):
     game = blackJack()
-    states = [game.state.getStateTuple()]
 
     while not game.state.terminal:
-        # This is essentially giving the state to the policy function and then passing that action back to the game and storing the resulting state.
-        state = game.action(policy(game.state)).getStateTuple()
-        # For first visit MC we only add the state if we have not seen it before in this episode
-        if state not in states:
-            states.append(state)
-    print(states)
-    for state in states:
+        # This is essentially giving the state to the policy function and then passing that action back to the game
+        game.action(policy(game.state))
+
+    checking = False
+    for state in game.state.getStateTuples():
+        # if state[1] == 11 or checking:
+        #     print(state)
+        #     checking = True
         if visits.get(state) is None:
             visits[state] = 0
             values[state] = 0.0
         visits[state] += 1
         # from 2.4 Incremental Implementation
         values[state] += (game.reward - values[state])/visits[state]
+        if checking:
+            print(f'Value of {state} updated to {values[state]}')
     
-    # print(f'Episode {episode+1} complete')
+    if checking:
+        print(f'Episode {episode+1} complete')
 
 # Generating surface plots. (Converting the dict to an array like this is probably ineffecient but oh well.)
 

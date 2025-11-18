@@ -65,7 +65,30 @@ class state:
     
     def getStateTuple(self) -> tuple:
         return (self.isPlayerUsuableAce, self.playerSum, self.viewableDealerCard)
+    
+    def getStateTuples(self) -> tuple:
+        return list(map(lambda c: (self.isPlayerUsuableAce, c, self.viewableDealerCard), self.getAllCombos(self.playerCards)))
+    
+    def getAllCombos(self, arr):
+        """Helper function to take an array of cards and return back all states there could have been with those cards."""
+        ret = [0]
+        for i in range(len(arr)):
+            if arr[i] == 11:
+                alt = [ret[len(ret)-1], 1]
+                if not i == len(arr)-1:
+                    alt = alt + arr[i+1:]
+                ret = self.getAllCombos(alt)[1:] + ret
 
+            ret.append(ret[len(ret)-1] + arr[i])
+            
+        ret.remove(0)
+        ret.sort()
+        for r in ret:
+            if r>21:
+                del ret[ret.index(r):]
+        
+        return list(dict.fromkeys(ret)) ## To avoid repeats
+         
 class blackJack:
     def __init__(self) -> state:
         self._state = state()
