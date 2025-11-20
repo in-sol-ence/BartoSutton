@@ -8,8 +8,8 @@ def policy(state) -> int:
 
 # --------------------------------------------------------
 ## Edit this value to change number of episodes simulated (too lazy to add a cmd line arg)
-numEpisodes = 1000000000
-## --------------------------------------------------------
+numEpisodes = 1000
+# --------------------------------------------------------
 
 values = {}
 # instead of keeping track of every single reward we have ever gotten for a state we can just keep track how many times we have visited a state 
