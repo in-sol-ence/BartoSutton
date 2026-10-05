@@ -2,6 +2,8 @@ import pygame
 
 # pygame setup
 pygame.init()
+logo = pygame.image.load(r"assets/vazLogo.jpg")
+pygame.display.set_icon(logo)
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
